@@ -1,17 +1,36 @@
 import React from 'react';
 import { ReconciliationResultsJSON } from '../types/finance';
-import { CheckCircle2, AlertCircle, XCircle } from 'lucide-react';
+import { CheckCircle2, AlertCircle, XCircle, Download } from 'lucide-react';
 
 export default function ReconciliationTab({ results }: { results: ReconciliationResultsJSON | null }) {
   if (!results) {
     return <div className="text-slate-500">Run the controller to view reconciliation results.</div>;
   }
 
+  const downloadJson = () => {
+    const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(results, null, 2));
+    const downloadAnchorNode = document.createElement('a');
+    downloadAnchorNode.setAttribute("href", dataStr);
+    downloadAnchorNode.setAttribute("download", `reconciliation_results_${results.batch_id}.json`);
+    document.body.appendChild(downloadAnchorNode);
+    downloadAnchorNode.click();
+    downloadAnchorNode.remove();
+  };
+
   return (
     <div className="max-w-5xl mx-auto space-y-6">
       <div className="flex items-center justify-between">
         <h2 className="text-2xl font-semibold text-slate-900">4-Way Reconciliation Match</h2>
-        <div className="text-sm text-slate-500">Processed: {new Date(results.processing_timestamp).toLocaleString()}</div>
+        <div className="flex items-center gap-4">
+          <div className="text-sm text-slate-500">Processed: {new Date(results.processing_timestamp).toLocaleString()}</div>
+          <button
+            onClick={downloadJson}
+            className="flex items-center gap-2 bg-slate-900 text-white px-3 py-1.5 rounded-md text-sm font-medium hover:bg-slate-800 transition-colors"
+          >
+            <Download className="w-4 h-4" />
+            Download JSON
+          </button>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
