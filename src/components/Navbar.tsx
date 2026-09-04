@@ -52,9 +52,16 @@ export const Navbar: React.FC<Props> = ({
       {/* Brand & Global Metadata Strip */}
       <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-2.5 sm:px-6">
         <div className="flex items-center gap-3">
-          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-emerald-600 font-serif font-bold text-white shadow-xs">
-            L
-          </div>
+          <svg className="h-9 w-9 flex-shrink-0 drop-shadow-md" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+              <linearGradient id="p-lightning-nav" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stopColor="#f97316" />
+                <stop offset="40%" stopColor="#ef4444" />
+                <stop offset="100%" stopColor="#ec4899" />
+              </linearGradient>
+            </defs>
+            <path fillRule="evenodd" clipRule="evenodd" d="M5.5 2 H14.5 A4 4 0 0 1 14.5 10 H13.5 L7.5 22 V15 H5.5 Z M10.5 4.5 H14.5 A1.5 1.5 0 0 1 14.5 7.5 H10.5 Z" fill="url(#p-lightning-nav)" />
+          </svg>
           <div>
             <div className="flex items-center gap-2">
               <h1 className="font-serif text-lg font-bold tracking-tight text-white">
@@ -112,7 +119,14 @@ export const Navbar: React.FC<Props> = ({
               Export CSV
             </button>
           </div>
-
+          <button
+            id="btn-settings-top"
+            onClick={() => document.getElementById('settings-modal')?.classList.remove('hidden')}
+            title="API Settings"
+            className="p-1.5 rounded text-slate-400 hover:text-emerald-400 hover:bg-slate-800 transition-colors ml-1"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>
+          </button>
           <button
             id="btn-clear-local-data-top"
             onClick={onClearData}

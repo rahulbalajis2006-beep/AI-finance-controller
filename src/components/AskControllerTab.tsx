@@ -17,9 +17,15 @@ export default function AskControllerTab({ results }: { results: ReconciliationR
     setLoading(true);
 
     try {
+      const customKey = localStorage.getItem('gemini_api_key');
+      const headers: HeadersInit = { 'Content-Type': 'application/json' };
+      if (customKey) {
+        headers['x-gemini-api-key'] = customKey;
+      }
+
       const res = await fetch('/api/ask', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers,
         body: JSON.stringify({ 
           question: userQ,
           context: results ? {
@@ -29,6 +35,7 @@ export default function AskControllerTab({ results }: { results: ReconciliationR
           } : "No batch processed yet."
         })
       });
+
       const data = await res.json();
       setChat(prev => [...prev, { role: 'agent', text: data.response }]);
     } catch (err) {
@@ -53,6 +60,7 @@ export default function AskControllerTab({ results }: { results: ReconciliationR
               <p className="text-xs mt-2">Example: "Why is the match rate only 96%?"</p>
             </div>
           )}
+
           {chat.map((msg, i) => (
             <div key={i} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
               <div className={`max-w-[80%] rounded-2xl px-5 py-3 ${
@@ -64,6 +72,7 @@ export default function AskControllerTab({ results }: { results: ReconciliationR
               </div>
             </div>
           ))}
+
           {loading && (
             <div className="flex justify-start">
               <div className="bg-slate-100 text-slate-800 rounded-2xl rounded-bl-none px-5 py-3">

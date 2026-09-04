@@ -5,7 +5,8 @@ import {
   FileCheck, 
   Wallet,
   MessageSquare,
-  ShieldAlert
+  Settings,
+  X
 } from 'lucide-react';
 import { ReconciliationResultsJSON, Invoice, Payment, Settlement, BankStatement } from './types/finance';
 import { DeterministicEngine } from './engine/reconciliation';
@@ -18,8 +19,16 @@ import AskControllerTab from './components/AskControllerTab';
 export default function App() {
   const [activeTab, setActiveTab] = useState<'controller' | 'reconciliation' | 'exceptions' | 'cash' | 'ask'>('controller');
   const [results, setResults] = useState<ReconciliationResultsJSON | null>(null);
+  const [showSettings, setShowSettings] = useState(false);
+  const [apiKey, setApiKey] = useState(() => localStorage.getItem('gemini_api_key') || '');
+  const [isProcessing, setIsProcessing] = useState(false);
 
-  const handleRunReconciliation = (autoSwitch = true) => {
+  const handleSaveSettings = () => {
+    localStorage.setItem('gemini_api_key', apiKey.trim());
+    setShowSettings(false);
+  };
+
+  const executeRun = (autoSwitch = true) => {
     const engine = new DeterministicEngine();
     
     // Generating 50 synthetic records as requested
@@ -81,65 +90,172 @@ export default function App() {
     }
   };
 
+  const handleRunReconciliation = (autoSwitch = true, manual = true) => {
+    if (manual) {
+      setIsProcessing(true);
+      setTimeout(() => {
+        executeRun(autoSwitch);
+        setIsProcessing(false);
+      }, 5000);
+    } else {
+      executeRun(autoSwitch);
+    }
+  };
+
   const handleUploadRun = (invData: any[], payData: any[], setData: any[], bnkData: any[]) => {
-    const engine = new DeterministicEngine();
-    
-    const invoices: Invoice[] = invData.map(d => ({
-      id: String(d.id || d.invoice_id),
-      amount: parseFloat(d.amount),
-      date: String(d.date)
-    }));
+    setIsProcessing(true);
+    setTimeout(() => {
+      const engine = new DeterministicEngine();
+      
+      const invoices: Invoice[] = invData.map(d => ({
+        id: String(d.id || d.invoice_id),
+        amount: parseFloat(d.amount),
+        date: String(d.date)
+      }));
 
-    const payments: Payment[] = payData.map(d => ({
-      id: String(d.id || d.payment_id),
-      invoiceId: String(d.invoiceId || d.invoice_id),
-      amount: parseFloat(d.amount),
-      date: String(d.date),
-      merchant: String(d.merchant || 'Unknown'),
-      description: String(d.description || 'N/A')
-    }));
+      const payments: Payment[] = payData.map(d => ({
+        id: String(d.id || d.payment_id),
+        invoiceId: String(d.invoiceId || d.invoice_id),
+        amount: parseFloat(d.amount),
+        date: String(d.date),
+        merchant: String(d.merchant || 'Unknown'),
+        description: String(d.description || 'N/A')
+      }));
 
-    const settlements: Settlement[] = setData.map(d => ({
-      id: String(d.id || d.settlement_id),
-      paymentId: String(d.paymentId || d.payment_id),
-      amount: parseFloat(d.amount),
-      date: String(d.date),
-      mdr: parseFloat(d.mdr || "0"),
-      gstOnMdr: parseFloat(d.gstOnMdr || d.gst_on_mdr || "0"),
-      refundAmount: parseFloat(d.refundAmount || d.refund_amount || "0")
-    }));
+      const settlements: Settlement[] = setData.map(d => ({
+        id: String(d.id || d.settlement_id),
+        paymentId: String(d.paymentId || d.payment_id),
+        amount: parseFloat(d.amount),
+        date: String(d.date),
+        mdr: parseFloat(d.mdr || "0"),
+        gstOnMdr: parseFloat(d.gstOnMdr || d.gst_on_mdr || "0"),
+        refundAmount: parseFloat(d.refundAmount || d.refund_amount || "0")
+      }));
 
-    const bank: BankStatement[] = bnkData.map(d => ({
-      id: String(d.id || d.bank_id),
-      settlementId: String(d.settlementId || d.settlement_id),
-      amount: parseFloat(d.amount),
-      date: String(d.date)
-    }));
+      const bank: BankStatement[] = bnkData.map(d => ({
+        id: String(d.id || d.bank_id),
+        settlementId: String(d.settlementId || d.settlement_id),
+        amount: parseFloat(d.amount),
+        date: String(d.date)
+      }));
 
-    const result = engine.reconcile(invoices, payments, settlements, bank, 500000);
-    setResults(result);
-    setActiveTab('reconciliation');
+      const result = engine.reconcile(invoices, payments, settlements, bank, 500000);
+      setResults(result);
+      setActiveTab('reconciliation');
+      setIsProcessing(false);
+    }, 5000);
   };
 
   useEffect(() => {
     // Auto-run the reconciliation once on load so the user sees working data immediately
-    handleRunReconciliation(false);
+    handleRunReconciliation(false, false);
   }, []);
 
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col font-sans">
+      {isProcessing && (
+        <div className="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-slate-900 text-white">
+          <style>{`
+            @keyframes loadProgress {
+              0% { width: 0%; }
+              100% { width: 100%; }
+            }
+            .animate-load-progress {
+              animation: loadProgress 5s linear forwards;
+            }
+          `}</style>
+          <svg className="h-24 w-24 mb-8 drop-shadow-[0_0_15px_rgba(249,115,22,0.3)] animate-pulse" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+              <linearGradient id="p-lightning-loader" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stopColor="#f97316" />
+                <stop offset="40%" stopColor="#ef4444" />
+                <stop offset="100%" stopColor="#ec4899" />
+              </linearGradient>
+            </defs>
+            <path fillRule="evenodd" clipRule="evenodd" d="M5.5 2 H14.5 A4 4 0 0 1 14.5 10 H13.5 L7.5 22 V15 H5.5 Z M10.5 4.5 H14.5 A1.5 1.5 0 0 1 14.5 7.5 H10.5 Z" fill="url(#p-lightning-loader)" />
+          </svg>
+          <h2 className="text-2xl font-bold tracking-tight mb-4">Reconciling Ledgers...</h2>
+          <div className="w-64 h-1.5 bg-slate-800 rounded-full overflow-hidden">
+            <div className="h-full bg-gradient-to-r from-orange-500 via-red-500 to-pink-500 animate-load-progress rounded-full"></div>
+          </div>
+          <p className="text-sm text-slate-400 mt-4 animate-pulse font-mono">Running deterministic 4-way matching</p>
+        </div>
+      )}
+
       <header className="bg-slate-900 text-white p-4 shadow-sm z-10 flex items-center justify-between">
         <div className="flex items-center space-x-3">
-          <img src="/IMG_20260904_115728_276.jpg" alt="Predator Logo" className="h-6 w-auto object-contain" onError={(e) => { e.currentTarget.style.display = 'none'; e.currentTarget.nextElementSibling?.classList.remove('hidden'); }} />
-          <ShieldAlert className="w-6 h-6 text-emerald-400 hidden" />
+          <svg className="h-7 w-7 flex-shrink-0 drop-shadow-md" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+              <linearGradient id="p-lightning-app" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stopColor="#f97316" />
+                <stop offset="40%" stopColor="#ef4444" />
+                <stop offset="100%" stopColor="#ec4899" />
+              </linearGradient>
+            </defs>
+            <path fillRule="evenodd" clipRule="evenodd" d="M5.5 2 H14.5 A4 4 0 0 1 14.5 10 H13.5 L7.5 22 V15 H5.5 Z M10.5 4.5 H14.5 A1.5 1.5 0 0 1 14.5 7.5 H10.5 Z" fill="url(#p-lightning-app)" />
+          </svg>
           <h1 className="text-xl font-bold tracking-tight">Predator AI Finance Controller</h1>
         </div>
-        {results && (
-          <div className="text-sm font-medium bg-slate-800 px-3 py-1 rounded-md text-slate-300">
-            Batch ID: {results.batch_id}
-          </div>
-        )}
+        <div className="flex items-center gap-4">
+          {results && (
+            <div className="text-sm font-medium bg-slate-800 px-3 py-1 rounded-md text-slate-300 hidden sm:block">
+              Batch ID: {results.batch_id}
+            </div>
+          )}
+          <button 
+            onClick={() => setShowSettings(true)}
+            className="p-2 bg-slate-800 hover:bg-slate-700 rounded-lg text-slate-300 hover:text-white transition-colors"
+            title="API Settings"
+          >
+            <Settings className="w-5 h-5" />
+          </button>
+        </div>
       </header>
+
+      {/* Settings Modal */}
+      {showSettings && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-md overflow-hidden">
+            <div className="flex items-center justify-between p-4 border-b border-slate-200">
+              <h2 className="text-lg font-semibold text-slate-900">API Settings</h2>
+              <button onClick={() => setShowSettings(false)} className="text-slate-500 hover:text-slate-700">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="p-4 space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">
+                  Gemini API Key (Optional)
+                </label>
+                <input 
+                  type="password"
+                  value={apiKey}
+                  onChange={(e) => setApiKey(e.target.value)}
+                  placeholder="AIzaSy..."
+                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:border-slate-500 focus:ring-1 focus:ring-slate-500 text-sm"
+                />
+                <p className="text-xs text-slate-500 mt-2">
+                  Provide your own Gemini API key to override the default system key. Your key is stored securely in your browser's local storage.
+                </p>
+              </div>
+            </div>
+            <div className="p-4 border-t border-slate-200 bg-slate-50 flex justify-end gap-2">
+              <button 
+                onClick={() => setShowSettings(false)}
+                className="px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-200 rounded-lg transition-colors"
+              >
+                Cancel
+              </button>
+              <button 
+                onClick={handleSaveSettings}
+                className="px-4 py-2 text-sm font-medium text-white bg-slate-900 hover:bg-slate-800 rounded-lg transition-colors"
+              >
+                Save Settings
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className="flex flex-col md:flex-row flex-1 overflow-hidden">
         {/* Sidebar */}

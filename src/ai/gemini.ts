@@ -1,19 +1,23 @@
 import { GoogleGenAI } from "@google/genai";
 
-let ai: GoogleGenAI | null = null;
+let defaultAi: GoogleGenAI | null = null;
 
-export const initGemini = () => {
-  if (!ai) {
+export const initGemini = (customKey?: string) => {
+  if (customKey) {
+    return new GoogleGenAI({ apiKey: customKey });
+  }
+  
+  if (!defaultAi) {
     const apiKey = process.env.GEMINI_API_KEY;
     if (apiKey) {
-      ai = new GoogleGenAI({ apiKey });
+      defaultAi = new GoogleGenAI({ apiKey });
     }
   }
-  return ai;
+  return defaultAi;
 };
 
-export const askController = async (question: string, context: any) => {
-  const gemini = initGemini();
+export const askController = async (question: string, context: any, customKey?: string) => {
+  const gemini = initGemini(customKey);
   if (!gemini) {
     return { response: "AI reasoning temporarily unavailable. Please configure GEMINI_API_KEY to use the Ask Controller feature." };
   }
@@ -37,8 +41,8 @@ NON-NEGOTIABLE RULES:
   return { response: response.text };
 };
 
-export const classifyException = async (exception: any) => {
-  const gemini = initGemini();
+export const classifyException = async (exception: any, customKey?: string) => {
+  const gemini = initGemini(customKey);
   if (!gemini) {
     return { 
       probableCause: "Unknown (AI unavailable)",
@@ -75,7 +79,6 @@ Use this exact shape:
   ],
   "summary": "Processed exceptions."
 }
-
 Do not wrap JSON in markdown. Do not add commentary outside JSON.
 
 Records to classify:
@@ -92,7 +95,7 @@ Records to classify:
   
   try {
     const text = response.text?.trim() || "{}";
-    const parsed = JSON.parse(text.replace(/^\\s*```json/i, '').replace(/```\\s*$/, ''));
+    const parsed = JSON.parse(text.replace(/^\s*```json/i, '').replace(/```\s*$/, ''));
     
     if (parsed.exceptions && parsed.exceptions.length > 0) {
       const ex = parsed.exceptions[0];

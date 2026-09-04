@@ -14,7 +14,8 @@ async function startServer() {
   app.post("/api/ask", async (req, res) => {
     try {
       const { question, context } = req.body;
-      const result = await askController(question, context);
+      const customKey = req.headers["x-gemini-api-key"] as string | undefined;
+      const result = await askController(question, context, customKey);
       res.json(result);
     } catch (error) {
       console.error("Ask Controller error:", error);
@@ -26,7 +27,8 @@ async function startServer() {
   app.post("/api/classify-exception", async (req, res) => {
     try {
       const { exception } = req.body;
-      const result = await classifyException(exception);
+      const customKey = req.headers["x-gemini-api-key"] as string | undefined;
+      const result = await classifyException(exception, customKey);
       res.json(result);
     } catch (error) {
       console.error("Classification error:", error);

@@ -18,9 +18,15 @@ export default function ExceptionsTab({ results }: { results: ReconciliationResu
   const handleClassify = async (ex: Exception) => {
     setClassifying(ex.id);
     try {
+      const customKey = localStorage.getItem('gemini_api_key');
+      const headers: HeadersInit = { 'Content-Type': 'application/json' };
+      if (customKey) {
+        headers['x-gemini-api-key'] = customKey;
+      }
+
       const res = await fetch('/api/classify-exception', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers,
         body: JSON.stringify({ exception: ex })
       });
       const data = await res.json();
