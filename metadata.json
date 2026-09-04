@@ -1,0 +1,6 @@
+{
+  "name": "Predator AI Finance Controller",
+  "description": "Zero-cost, local-first deterministic financial reconciliation and cash flow agent.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
